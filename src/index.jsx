@@ -1,4 +1,4 @@
-import api, { route } from "@forge/api";
+import api, { route, storage } from "@forge/api";
 
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
 
@@ -39,7 +39,10 @@ export async function run(event, context) {
 
   // Step 3: Check Content Preview for PII
   console.log("\n🚨 Step 3: Scanning Content Preview for PII...");
-  const previewPiiHits = detectPii(contentPreview);
+
+  // Fetch PII settings
+  const piiSettings = await storage.get('pii-settings-v1');
+  const previewPiiHits = detectPii(contentPreview, piiSettings);
 
   if (previewPiiHits.length === 0) {
     console.log("✅ No PII found in Content Preview - stopping scan");
@@ -449,8 +452,18 @@ function stripHtmlTags(html) {
    DETECT PII
    Uses regex patterns + context to detect PII
 ----------------------------------------- */
-function detectPii(text) {
+function detectPii(text, enabledTypes) {
   if (!text) return [];
+
+  // Default to all enabled if not provided
+  const config = enabledTypes || {
+    email: true,
+    phone: true, // Note: Admin UI uses 'phone'
+    creditCard: true,
+    ssn: true,
+    passport: true,
+    driversLicense: true
+  };
 
   const hits = [];
   const foundIndices = new Set(); // Track start indices to avoid double-counting overlaps
@@ -473,32 +486,39 @@ function detectPii(text) {
   };
 
   // 1. Strict SSN (XXX-XX-XXXX) - Highest Confidence
-  // Distinct pattern due to separators
-  const strictSsnRegex = /\b\d{3}[-\s]\d{2}[-\s]\d{4}\b/g;
-  for (const match of text.matchAll(strictSsnRegex)) {
-    addHit(match, 'ssn', 10);
+  if (config.ssn) {
+    const strictSsnRegex = /\b\d{3}[-\s]\d{2}[-\s]\d{4}\b/g;
+    for (const match of text.matchAll(strictSsnRegex)) {
+      addHit(match, 'ssn', 10);
+    }
   }
 
   // 2. Email (Distinct)
-  const emailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
-  for (const match of text.matchAll(emailRegex)) {
-    addHit(match, 'email', 10);
+  if (config.email) {
+    const emailRegex = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+    for (const match of text.matchAll(emailRegex)) {
+      addHit(match, 'email', 10);
+    }
   }
 
   // 3. Phone (Distinct-ish)
-  const phoneRegex = /(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g;
-  for (const match of text.matchAll(phoneRegex)) {
-    // Basic filter for potential overlaps with 10-digit IDs, but phone usually has formatting
-    if (validatePhone(match[0])) {
-      addHit(match, 'phone', 5);
+  if (config.phone) {
+    const phoneRegex = /(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g;
+    for (const match of text.matchAll(phoneRegex)) {
+      // Basic filter for potential overlaps with 10-digit IDs, but phone usually has formatting
+      if (validatePhone(match[0])) {
+        addHit(match, 'phone', 5);
+      }
     }
   }
 
   // 4. Credit Card (13-16 digits)
-  const ccRegex = /\b(?:\d[ -]?){13,16}\b/g;
-  for (const match of text.matchAll(ccRegex)) {
-    if (validateCreditCard(match[0])) {
-      addHit(match, 'creditCard', 10);
+  if (config.creditCard) {
+    const ccRegex = /\b(?:\d[ -]?){13,16}\b/g;
+    for (const match of text.matchAll(ccRegex)) {
+      if (validateCreditCard(match[0])) {
+        addHit(match, 'creditCard', 10);
+      }
     }
   }
 
@@ -513,38 +533,43 @@ function detectPii(text) {
     const context = getContext(text, match.index, match[0].length);
     const lowerContext = context.toLowerCase();
 
-    if (lowerContext.includes('passport')) {
+    // Check specific types based on config
+    if (config.passport && lowerContext.includes('passport')) {
       addHit(match, 'passport', 10);
-    } else if (lowerContext.includes('social') || lowerContext.includes('ssn') || lowerContext.includes('security')) {
+    } else if (config.ssn && (lowerContext.includes('social') || lowerContext.includes('ssn') || lowerContext.includes('security'))) {
       addHit(match, 'ssn', 9); // High confidence due to keyword
-    } else if (lowerContext.includes('license') || lowerContext.includes('driving') || lowerContext.includes('driver')) {
+    } else if (config.driversLicense && (lowerContext.includes('license') || lowerContext.includes('driving') || lowerContext.includes('driver'))) {
       addHit(match, 'driversLicense', 8);
-    } else {
-      // Ambiguous default: Report as "Potential SSN/Passport" or prioritize safety -> SSN
-      addHit(match, 'ssn_or_passport', 1);
+    } else if (config.ssn) {
+      // Only default to SSN if SSN is enabled
+      addHit(match, 'ssn', 1); // Low confidence
+    } else if (config.passport) {
+      // Fallback to passport if SSN disabled
+      addHit(match, 'passport', 1);
     }
   }
 
   // 6. Alphanumeric IDs (Drivers License usually)
-  // Exclude pure numbers if they weren't caught above (e.g. 6-8 digits, or >9 digits)
-  const alphaNumRegex = /\b[A-Z0-9]{6,12}\b/g;
-  for (const match of text.matchAll(alphaNumRegex)) {
-    // Check overlap
-    const isOverlapping = checkOverlap(match.index, match[0].length, foundIndices);
-    if (isOverlapping) continue;
+  if (config.driversLicense) {
+    const alphaNumRegex = /\b[A-Z0-9]{6,12}\b/g;
+    for (const match of text.matchAll(alphaNumRegex)) {
+      // Check overlap
+      const isOverlapping = checkOverlap(match.index, match[0].length, foundIndices);
+      if (isOverlapping) continue;
 
-    // Filter out common false positives (like 'Phone', 'Email' parts, or simple words)
-    if (/^[A-Z]+$/.test(match[0])) continue; // Skip all letters (words)
+      // Filter out common false positives (like 'Phone', 'Email' parts, or simple words)
+      if (/^[A-Z]+$/.test(match[0])) continue; // Skip all letters (words)
 
-    // Only count if it has digits (smart DL check) OR explicit context
-    const hasDigits = /\d/.test(match[0]);
-    const context = getContext(text, match.index, match[0].length).toLowerCase();
+      // Only count if it has digits (smart DL check) OR explicit context
+      const hasDigits = /\d/.test(match[0]);
+      const context = getContext(text, match.index, match[0].length).toLowerCase();
 
-    if (context.includes('license') || context.includes('driver') || context.includes('dl')) {
-      addHit(match, 'driversLicense', 10);
-    } else if (hasDigits && /[A-Z]/.test(match[0])) {
-      // Mixed alpha-numeric is strong indicator of ID
-      addHit(match, 'driversLicense', 5);
+      if (context.includes('license') || context.includes('driver') || context.includes('dl')) {
+        addHit(match, 'driversLicense', 10);
+      } else if (hasDigits && /[A-Z]/.test(match[0])) {
+        // Mixed alpha-numeric is strong indicator of ID
+        addHit(match, 'driversLicense', 5);
+      }
     }
   }
 

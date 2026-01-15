@@ -9,6 +9,12 @@ modules:
   function:
     - key: main
       handler: index.run
+    - key: admin-main
+      handler: admin.run
+  confluence:adminPage:
+    - key: pii-admin-config
+      function: admin-main
+      title: PII Configuration
 app:
   runtime:
     name: nodejs22.x
@@ -26,6 +32,7 @@ permissions:
     - write:confluence-content
     - read:confluence-user
     - write:page:confluence
+    - storage:app
   external:
     fetch:
       backend:
