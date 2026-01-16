@@ -38,7 +38,3 @@ permissions:
     - read:confluence-user
     - write:page:confluence
     - storage:app
-  external:
-    fetch:
-      backend:
-        - address: https://jabreal.app.n8n.cloud

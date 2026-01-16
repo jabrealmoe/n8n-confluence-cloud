@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { invoke } from '@forge/bridge';
+import { invoke, view } from '@forge/bridge';
 import { createRoot } from 'react-dom/client';
+import '@atlaskit/css-reset';
 import DnaAnimation from './DnaAnimation';
+
+// Enable Confluence Theme Sync
+view.theme.enable();
 
 const App = () => {
     const [settings, setSettings] = useState(null);
@@ -38,31 +42,32 @@ const App = () => {
     if (loading) return <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>Loading settings...</div>;
 
     return (
-        <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
+        <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto', color: 'var(--ds-text, #172b4d)' }}>
             <DnaAnimation />
 
             <div style={{ marginBottom: '20px' }}>
                 <h2 style={{ margin: 0 }}>PII Types</h2>
             </div>
 
-            <p style={{ color: '#6b778c' }}>Select which types of Personally Identifiable Information (PII) should be detected.</p>
+            <p style={{ color: 'var(--ds-text-subtle, #6b778c)' }}>Select which types of Personally Identifiable Information (PII) should be detected.</p>
 
             <div style={{
                 marginTop: '20px',
-                backgroundColor: 'white',
+                backgroundColor: 'var(--ds-surface-raised, white)',
                 padding: '20px',
                 borderRadius: '8px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                boxShadow: 'var(--ds-shadow-raised, 0 1px 3px rgba(0,0,0,0.1))',
+                color: 'var(--ds-text, #172b4d)'
             }}>
-                <h4 style={{ marginTop: 0, marginBottom: '15px' }}>Detection Rules</h4>
+                <h4 style={{ marginTop: 0, marginBottom: '15px', color: 'var(--ds-text, #172b4d)' }}>Detection Rules</h4>
                 {Object.keys(settings).filter(k => k !== 'regulatedGroupName').map((key) => (
                     <div key={key} style={{ marginBottom: '12px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', color: 'var(--ds-text, #172b4d)' }}>
                             <input
                                 type="checkbox"
                                 checked={settings[key]}
                                 onChange={(e) => handleChange(key, e.target.checked)}
-                                style={{ marginRight: '10px', width: '16px', height: '16px' }}
+                                style={{ marginRight: '10px', width: '16px', height: '16px', accentColor: 'var(--ds-background-selected, #0052cc)' }}
                             />
                             <span style={{ fontSize: '14px' }}>
                                 {key === 'driversLicense' ? "Driver's License" : key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1').trim()}
@@ -74,17 +79,18 @@ const App = () => {
 
             <div style={{
                 marginTop: '20px',
-                backgroundColor: 'white',
+                backgroundColor: 'var(--ds-surface-raised, white)',
                 padding: '20px',
                 borderRadius: '8px',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                boxShadow: 'var(--ds-shadow-raised, 0 1px 3px rgba(0,0,0,0.1))',
+                color: 'var(--ds-text, #172b4d)'
             }}>
-                <h3 style={{ marginTop: 0 }}>Regulated User Control</h3>
-                <p style={{ fontSize: '14px', color: '#6b778c' }}>
+                <h3 style={{ marginTop: 0, color: 'var(--ds-text, #172b4d)' }}>Regulated User Control</h3>
+                <p style={{ fontSize: '14px', color: 'var(--ds-text-subtle, #6b778c)' }}>
                     Users in this group will be blocked from using @mentions and editing comments.
                 </p>
 
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '14px' }}>Regulated Group Name:</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '14px', color: 'var(--ds-text, #172b4d)' }}>Regulated Group Name:</label>
                 <input
                     type="text"
                     value={settings.regulatedGroupName || ''}
@@ -93,10 +99,13 @@ const App = () => {
                     style={{
                         padding: '10px',
                         width: '100%',
+                        maxWidth: '400px',
+                        boxSizing: 'border-box',
                         fontSize: '14px',
                         borderRadius: '4px',
-                        border: '1px solid #dfe1e6',
-                        backgroundColor: '#fafbfc'
+                        border: '1px solid var(--ds-border-input, #dfe1e6)',
+                        backgroundColor: 'var(--ds-background-input, #fafbfc)',
+                        color: 'var(--ds-text, #172b4d)'
                     }}
                 />
             </div>

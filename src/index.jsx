@@ -1,6 +1,6 @@
 import api, { route, storage } from "@forge/api";
 
-const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
+
 
 export async function run(event, context) {
   console.log("🔔 PII Detection triggered for Confluence page");
@@ -717,13 +717,9 @@ async function reportPiiFindings({ currentPage, previewPiiHits, otherPagesPii })
   }
 
   // Send to n8n if webhook URL is configured
-  if (N8N_WEBHOOK_URL) {
-    console.log("\n📨 Sending report to n8n...");
-    await callN8N(report);
-  } else {
-    console.log("\n⚠️ N8N_WEBHOOK_URL not configured - skipping webhook call");
-    console.log("   Report data:", JSON.stringify(report, null, 2));
-  }
+  // N8n integration removed.
+  console.log("\n✅ PII findings logged. No external report sent.");
+  console.log("   Report data:", JSON.stringify(report, null, 2));
 }
 
 
@@ -982,41 +978,7 @@ function maskSensitiveData(data, type) {
    CALL n8n WORKFLOW
    Sends payload to n8n webhook
 ----------------------------------------- */
-async function callN8N(payload) {
-  try {
-    console.log(`   Webhook URL: ${N8N_WEBHOOK_URL.substring(0, 50)}...`);
 
-    const response = await fetch(N8N_WEBHOOK_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": "Forge-Confluence-PII-Detector"
-      },
-      body: JSON.stringify(payload),
-    });
-
-    if (response.ok) {
-      const responseText = await response.text();
-      console.log(`✅ n8n webhook called successfully (${response.status})`);
-      if (responseText) {
-        console.log(`   Response: ${responseText.substring(0, 200)}`);
-      }
-    } else {
-      const errorText = await response.text();
-      console.log(`❌ n8n webhook call failed: ${response.status} ${response.statusText}`);
-      console.log(`   Error details: ${errorText.substring(0, 300)}`);
-
-      // Log payload size for debugging
-      const payloadSize = JSON.stringify(payload).length;
-      console.log(`   Payload size: ${payloadSize} bytes`);
-    }
-  } catch (error) {
-    console.log(`❌ Error calling n8n webhook: ${error.message}`);
-    if (error.stack) {
-      console.log(`   Stack: ${error.stack.substring(0, 300)}`);
-    }
-  }
-}
 
 /* -----------------------------------------
    REGULATED USER HANDLER

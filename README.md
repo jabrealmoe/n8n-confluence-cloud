@@ -1,51 +1,75 @@
-# Confluence PII Detector & n8n Integration
+# Confluence PII Detector
 
-This Forge app automatically scans Confluence pages for Personally Identifiable Information (PII) and reports findings to an n8n webhook. It is designed to help organizations maintain data security and compliance by proactively identifying sensitive data leaks.
+![The AI Guardian](./assets/wizard_detecting.png)
 
-![n8n Product Agent Flow](./n8n-product-agent-flow.png)
+This Forge app acts as an intelligent guardian for your Confluence content, automatically scanning pages for Personally Identifiable Information (PII). It allows organizations to maintain data security and compliance by proactively identifying sensitive data leaks within the "Garden" of your knowledge base.
 
 ## Features
 
 - **Real-time PII Detection**: Automatically scans page content when created or updated.
-- **Comprehensive Scanning**: Detects various PII types including:
-  - Social Security Numbers (SSN)
-  - Credit Card Numbers
-  - Email Addresses
-  - Phone Numbers
-  - Passport Numbers
-  - Driver's Licenses
-  - IP Addresses
-- **Deep Space Scanning**: If PII is found on a page, the app automatically triggers a scan of other pages in the same space to identify widespread issues.
-- **Version History Analysis**: Checks historical versions of pages to ensure no sensitive data is hidden in past edits.
-- **n8n Integration**: Sends detailed JSON reports of all findings to a configured n8n webhook for further processing, alerting, or automated remediation.
+- **Configurable Detectors**: Administrators can enable or disable specific PII detectors via the Admin Interface.
+- **Regulated User Control**: Option to restrict actions (mentions, comment editing) for specific user groups.
+- **Deep Space Scanning**: If PII is found, triggers broader scans to identify widespread issues.
 
-![n8n Product Agent Zoom Out Flow](./n8n-product-agent-zoom-out-flow.png)
+## Application Flow
+
+The following diagram illustrates how the application processes Confluence page events:
+
+```mermaid
+graph TD
+    A[User Creates/Updates Page] -->|Trigger Event| B(Forge App Trigger)
+    B --> C{Check Admin Settings}
+    C -->|Get Enabled PII Types| D[Scan Content for PII]
+    D --> E{PII Detected?}
+    E -->|No| F[End Process]
+    E -->|Yes| G[Log Finding]
+    G --> K[Quarantine/Restrict Content]
+    E -->|Yes| J[Trigger Deep Space Scan]
+```
+
+![Application Execution Flow](./assets/execution_flow_diagram.png)
 
 ## Configuration
 
-To use this app, you must configure the n8n webhook URL where reports will be sent.
+## Configuration
 
-1. Deploy and install the app:
+1. **Deploy and install the app**:
+
    ```bash
    forge deploy
    forge install
    ```
 
-2. Set the `N8N_WEBHOOK_URL` environment variable:
-   ```bash
-   forge variables set N8N_WEBHOOK_URL <your-n8n-webhook-url>
-   ```
+## Admin Interface Usage
 
-## Usage
+The application includes a dedicated Admin Interface for granular control over PII detection.
 
-Once installed and configured, the app works automatically in the background.
-1. Create or update a Confluence page.
-2. If PII is detected, the app logs the findings and sends a report to n8n.
-3. Check your n8n workflow executions to see the incoming reports.
+**To access the Admin Interface:**
+
+1. Navigate to your Confluence Apps management or global settings.
+2. Select **PII Configuration**.
+
+**Available Settings:**
+
+### PII Detection Rules
+
+Toggle the checkboxes to enable or disable scanning for specific types of data:
+
+- **Email Addresses**
+- **Phone Numbers**
+- **Credit Card Numbers**
+- **Social Security Numbers (SSN)**
+- **Passport Numbers**
+- **Driver's Licenses**
+
+### Regulated User Control
+
+- **Regulated Group Name**: Enter the name of a Confluence user group (e.g., `contractors`).
+  - _Effect_: Users in this group will be restricted from using `@mentions` and editing comments to prevent unauthorized data dissemination or modification.
 
 ## Development
 
-- Run the app locally:
+- Run the app locally for testing and development:
   ```bash
   forge tunnel
   ```

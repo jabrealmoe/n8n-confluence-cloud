@@ -10,6 +10,8 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@atlaskit/css-reset": "^7.3.10",
+    "@atlaskit/tokens": "^9.1.2",
     "@forge/bridge": "^5.10.2",
     "parcel": "^2.16.3",
     "react": "^19.2.3",
