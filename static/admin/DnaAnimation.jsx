@@ -141,26 +141,28 @@ const DnaAnimation = () => {
                 emissiveIntensity: 0.2
             });
             
-            // Core - Larger
-            protGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 16), mat));
+            // Core - Larger & Smoother
+            protGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.2, 32, 32), mat));
             
-            // Sub-units
-            for(let j=0; j<3; j++) {
-                const sub = new THREE.Mesh(new THREE.SphereGeometry(0.7, 16, 16), mat);
+            // Sub-units - More complex/globular structure
+            for(let j=0; j<8; j++) {
+                const sub = new THREE.Mesh(new THREE.SphereGeometry(0.5 + Math.random() * 0.4, 32, 32), mat);
                 sub.position.set(
                     (Math.random()-0.5), 
                     (Math.random()-0.5), 
                     (Math.random()-0.5)
-                ).normalize().multiplyScalar(1.0);
+                ).normalize().multiplyScalar(1.0 + Math.random() * 0.4);
                 protGroup.add(sub);
             }
 
-            // Orbit parameters - Closer range to ensure they cross the DNA
+            // Orbit parameters - Slower, majestic movement
             protGroup.userData = {
                 angle: (Math.PI * 2 * i) / proteinCount,
-                speed: 0.015 + Math.random() * 0.02,
-                radius: 5 + Math.random() * 4, // 5 to 9 range
-                yOffset: (Math.random() - 0.5) * 12
+                speed: 0.002 + Math.random() * 0.003, // Much slower
+                radius: 5 + Math.random() * 4, 
+                yOffset: (Math.random() - 0.5) * 12,
+                rotSpeedX: (Math.random() - 0.5) * 0.01, // Self-rotation
+                rotSpeedY: (Math.random() - 0.5) * 0.01
             };
             
             proteinGroup.add(protGroup);
@@ -187,28 +189,28 @@ const DnaAnimation = () => {
         const animate = () => {
             animationId = requestAnimationFrame(animate);
 
-            // 1. Rotate DNA (FASTER FOR DEV)
-            dnaGroup.rotation.y += 0.04;
+            // 1. Rotate DNA (Slow & Steady)
+            dnaGroup.rotation.y += 0.004;
 
-            // 2. Animate Particles (Brownian-ish motion)
+            // 2. Animate Particles (Gentle drift)
             particles.forEach(p => {
                 p.position.add(p.userData.vel);
-                // Boundary check (loop around)
                 if (p.position.length() > 15) {
                     p.position.multiplyScalar(-0.9); 
                 }
             });
 
-            // 3. Animate Proteins (Orbiting)
+            // 3. Animate Proteins (Orbiting + Self Rotation)
             proteins.forEach(prot => {
                 const ud = prot.userData;
                 ud.angle += ud.speed;
                 prot.position.x = Math.cos(ud.angle) * ud.radius;
                 prot.position.z = Math.sin(ud.angle) * ud.radius;
-                prot.position.y = Math.sin(ud.angle * 2) * 3 + ud.yOffset; // Bobbing motion
+                prot.position.y = Math.sin(ud.angle * 2) * 3 + ud.yOffset; 
                 
-                prot.rotation.x += 0.02;
-                prot.rotation.y += 0.03;
+                // Add self-rotation for more dynamic feel
+                prot.rotation.x += ud.rotSpeedX;
+                prot.rotation.y += ud.rotSpeedY;
             });
 
             // Gentle World Rotation

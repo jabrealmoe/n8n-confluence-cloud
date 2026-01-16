@@ -85,7 +85,7 @@ const App = () => {
                 boxShadow: 'var(--ds-shadow-raised, 0 1px 3px rgba(0,0,0,0.1))',
                 color: 'var(--ds-text, #172b4d)'
             }}>
-                <h3 style={{ marginTop: 0, color: 'var(--ds-text, #172b4d)' }}>Regulated User Control</h3>
+                <h3 style={{ marginTop: 0, color: 'var(--ds-text, #172b4d)' }}>Regulated User Controls</h3>
                 <p style={{ fontSize: '14px', color: 'var(--ds-text-subtle, #6b778c)' }}>
                     Users in these groups will be blocked from using @mentions and editing comments.
                 </p>
