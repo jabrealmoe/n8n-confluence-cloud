@@ -11,6 +11,11 @@ This Forge app acts as an intelligent guardian for your Confluence content, auto
 - **Regulated User Control**: Option to restrict actions (mentions, comment editing) for specific user groups.
 - **Deep Space Scanning**: If PII is found, triggers broader scans to identify widespread issues.
 
+### PII Detection in Action
+
+![PII Detection Demo](./assets/demo-confluence-1.gif)
+_The app detects SSNs, highlights the data, and automatically labels the page._
+
 ## Application Flow
 
 The following diagram illustrates how the application processes Confluence page events:
@@ -48,6 +53,8 @@ The application includes a dedicated Admin Interface for granular control over P
 
 1. Navigate to your Confluence Apps management or global settings.
 2. Select **PII Configuration**.
+
+![Admin Interface Configuration](./assets/demo-confluence-2.gif)
 
 **Available Settings:**
 
